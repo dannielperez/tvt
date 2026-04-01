@@ -3,13 +3,13 @@
   "version": "2.0.0",
   "description": "",
   "keywords": ["tvt", "ipc", "cctv"],
-  "homepage": "https://github.com/2BAD/tvt#readme",
+  "homepage": "https://github.com/dannielperez/tvt#readme",
   "bugs": {
-    "url": "https://github.com/2BAD/tvt/issues"
+    "url": "https://github.com/dannielperez/tvt/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/2BAD/tvt.git"
+    "url": "git+https://github.com/dannielperez/tvt.git"
   },
   "license": "MIT",
   "author": "2BAD (https://github.com/2BAD)",
