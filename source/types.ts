@@ -24,3 +24,14 @@ export type VersionInfo = {
     software: number
   }
 }
+
+export type IPCDevice = {
+  channel: number
+  name: string
+  address: string
+  port: number
+  status: 'Online' | 'Offline'
+  protocol: string
+  model: string
+  deviceId: number
+}

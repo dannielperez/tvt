@@ -197,7 +197,7 @@ export class SDK implements TVTSDK {
       'long',
       koffi.out(koffi.pointer(NET_SDK_IPC_DEVICE_INFO)),
       'long',
-      'long *'
+      koffi.out(koffi.pointer('long'))
     ])(userId, deviceIPCInfo, buffSize, ipcCount)
   }
 

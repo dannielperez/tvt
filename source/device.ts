@@ -1,4 +1,5 @@
 import debug from 'debug'
+import koffi from 'koffi'
 import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync } from 'node:fs'
 import { platform } from 'node:os'
@@ -8,8 +9,9 @@ import { auth, measure } from './decorators/index.ts'
 import { parseBuildDate } from './helpers/date.ts'
 import { validateIp, validatePort } from './helpers/validators.ts'
 import { sdk } from './lib/sdk.ts'
+import { NET_SDK_IPC_DEVICE_INFO } from './lib/struct/index.ts'
 import { NET_SDK_ERROR, type DeviceInfo } from './lib/types.ts'
-import type { Settings, VersionInfo } from './types.ts'
+import type { IPCDevice, Settings, VersionInfo } from './types.ts'
 export type * from './types.ts'
 
 const log = debug('tvt:device')
@@ -260,6 +262,66 @@ export class Device {
   async getLastError(): Promise<string> {
     const errorCode = await sdk.getLastError()
     return NET_SDK_ERROR[errorCode] ?? 'Unknown error'
+  }
+
+  /**
+   * Extracts a null-terminated C string from a char array or returns the value as-is.
+   */
+  static cstr(arr: unknown): string {
+    if (typeof arr === 'string') return arr.trim()
+    if (Array.isArray(arr) || ArrayBuffer.isView(arr)) {
+      const bytes = Array.from(arr as Iterable<number>)
+      const nullIdx = bytes.indexOf(0)
+      const trimmed = nullIdx >= 0 ? bytes.slice(0, nullIdx) : bytes
+      return String.fromCharCode(...trimmed).trim()
+    }
+    return String(arr).trim()
+  }
+
+  /**
+   * Gets the list of IPC (camera) devices connected to this NVR.
+   *
+   * @param maxCameras - Maximum number of cameras to retrieve (default: 64)
+   * @returns A promise that resolves to an array of IPC device info objects
+   */
+  @auth
+  async getIPCDevices(maxCameras = 64): Promise<IPCDevice[]> {
+    log(`Getting IPC devices from device ${this.uuid}`)
+
+    const structSize = koffi.sizeof(NET_SDK_IPC_DEVICE_INFO)
+    const bufSize = maxCameras * structSize
+    const ipcBuf = Buffer.alloc(bufSize)
+    const ipcCount = [0]
+
+    const result = await sdk.getDeviceIPCInfo(this.userId, ipcBuf as unknown as DeviceInfo, bufSize, ipcCount)
+
+    const count = ipcCount[0] ?? 0
+
+    if (!result || count === 0) {
+      log(`No IPC devices found on device ${this.uuid}`)
+      return []
+    }
+
+    log(`Found ${count} IPC devices on device ${this.uuid}`)
+
+    const devices: IPCDevice[] = []
+    for (let i = 0; i < count; i++) {
+      const cam = koffi.decode(ipcBuf, i * structSize, NET_SDK_IPC_DEVICE_INFO) as Record<string, unknown> | undefined
+      if (cam == null) continue
+
+      devices.push({
+        channel: (cam['channel'] as number) ?? i + 1,
+        name: Device.cstr(cam['szChlname']),
+        address: Device.cstr(cam['szServer']),
+        port: (cam['nPort'] as number) || 0,
+        status: (cam['status'] as number) === 1 ? 'Online' : 'Offline',
+        protocol: Device.cstr(cam['manufacturerName']),
+        model: Device.cstr(cam['productModel']),
+        deviceId: (cam['deviceID'] as number) || 0,
+      })
+    }
+
+    return devices
   }
 
   /**
