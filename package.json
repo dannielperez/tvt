@@ -1,5 +1,5 @@
 {
-  "name": "@2bad/tvt",
+  "name": "dannielperez/tvt",
   "version": "2.0.0",
   "description": "",
   "keywords": [
@@ -22,6 +22,10 @@
       "name": "Jason Hyde",
       "email": "github@2bad.me",
       "url": "https://github.com/mrhyde"
+    },
+    {
+      "name": "Danniel Perez",
+      "url": "https://github.com/dannielperez"
     }
   ],
   "type": "module",
