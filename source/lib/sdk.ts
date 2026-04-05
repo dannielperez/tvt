@@ -70,6 +70,84 @@ interface TVTSDK {
   stopSavingLiveStream: (liveHandle: number) => Promise<boolean>
   // ✅︎ BOOL NET_SDK_CaptureJPEGFile_V2(LONG lUserID, LONG lChannel, char *sPicFileName);
   captureJPEGFile_V2: (userId: number, channel: number, fileName: string) => Promise<boolean>
+  // ✅︎ BOOL NET_SDK_CaptureJPEGData_V2(LONG lUserID, LONG lChannel, char* sJpegPicBuffer, DWORD dwPicSize, LPDWORD lpSizeReturned);
+  captureJPEGData_V2: (
+    userId: number,
+    channel: number,
+    buffer: Buffer,
+    bufferSize: number,
+    sizeReturned: number[]
+  ) => Promise<boolean>
+  // ✅︎ BOOL NET_SDK_CaptureJpeg(LONG lUserID, LONG lChannel, LONG dwResolution, char* sJpegPicBuffer, DWORD dwPicBufSize, LPDWORD lpSizeReturned);
+  captureJpeg: (
+    userId: number,
+    channel: number,
+    resolution: number,
+    buffer: Buffer,
+    bufferSize: number,
+    sizeReturned: number[]
+  ) => Promise<boolean>
+  // ✅︎ BOOL NET_SDK_CaptureJPEGPicture(LONG lUserID, LONG lChannel, LPNET_SDK_JPEGPARA lpJpegPara, char* sJpegPicBuffer, DWORD dwPicSize, LPDWORD lpSizeReturned);
+  captureJPEGPicture: (
+    userId: number,
+    channel: number,
+    jpegPara: Buffer,
+    buffer: Buffer,
+    bufferSize: number,
+    sizeReturned: number[]
+  ) => Promise<boolean>
+  // ✅︎ BOOL NET_SDK_CapturePicture_Other(LONG lUserID, LONG lChannel, char* sPicFileName);
+  capturePictureOther: (userId: number, channel: number, fileName: string) => Promise<boolean>
+  // ✅︎ POINTERHANDLE NET_SDK_LivePlay(LONG lUserID, LPNET_SDK_CLIENTINFO lpClientInfo, LIVE_DATA_CALLBACK fLiveDataCallBack, void* pUser);
+  livePlay: (userId: number, clientInfo: Buffer) => Promise<bigint>
+  // ✅︎ BOOL NET_SDK_StopLivePlay(POINTERHANDLE lLiveHandle);
+  stopLivePlay: (liveHandle: bigint) => Promise<boolean>
+  // ✅︎ BOOL NET_SDK_CapturePicture(POINTERHANDLE lLiveHandle, char* sPicFileName);
+  capturePicture: (liveHandle: bigint, fileName: string) => Promise<boolean>
+  // ✅︎ BOOL NET_SDK_GetRtspUrl(LONG lUserID, LONG lChannel, LONG lStreamType, char* sRtspUrl);
+  getRtspUrl: (userId: number, channel: number, streamType: number, urlBuffer: Buffer) => Promise<boolean>
+  // ✅︎ BOOL NET_SDK_ApiInterface(LONG lUserID, char *sendXML, char *strUrl, LPVOID lpOutBuffer, DWORD dwOutBufferSize, LPDWORD lpBytesReturned);
+  apiInterface: (
+    userId: number,
+    sendXML: string,
+    strUrl: string,
+    outBuffer: Buffer,
+    outBufferSize: number,
+    bytesReturned: number[]
+  ) => Promise<boolean>
+  // ✅︎ BOOL NET_SDK_TransparentConfig(LONG lUserID, char *sendXML, char *strUrl, LPVOID lpOutBuffer, DWORD dwOutBufferSize, LPDWORD lpBytesReturned);
+  transparentConfig: (
+    userId: number,
+    sendXML: string,
+    strUrl: string,
+    outBuffer: Buffer,
+    outBufferSize: number,
+    bytesReturned: number[]
+  ) => Promise<boolean>
+  // ✅︎ BOOL NET_SDK_GetDVRConfig(LONG lUserID, DWORD dwCommand, LONG lChannel, LPVOID lpOutBuffer, DWORD dwOutBufferSize, LPDWORD lpBytesReturned, BOOL bDefautlConfig);
+  getDVRConfig: (
+    userId: number,
+    command: number,
+    channel: number,
+    outBuffer: Buffer,
+    outBufferSize: number,
+    bytesReturned: number[],
+    defaultConfig: boolean
+  ) => Promise<boolean>
+  // ✅︎ BOOL NET_SDK_SetDVRConfig(LONG lUserID, DWORD dwCommand, LONG lChannel, LPVOID lpInBuffer, DWORD dwInBufferSize);
+  setDVRConfig: (
+    userId: number,
+    command: number,
+    channel: number,
+    inBuffer: Buffer,
+    inBufferSize: number
+  ) => Promise<boolean>
+  // ✅︎ LONG NET_SDK_EnterDVRConfig(LONG lUserID);
+  enterDVRConfig: (userId: number) => Promise<number>
+  // ✅︎ BOOL NET_SDK_ExitDVRConfig(LONG lUserID);
+  exitDVRConfig: (userId: number) => Promise<boolean>
+  // ✅︎ BOOL NET_SDK_SaveConfig(LONG lUserID);
+  saveConfig: (userId: number) => Promise<boolean>
 }
 
 export class SDK implements TVTSDK {
@@ -396,7 +474,7 @@ export class SDK implements TVTSDK {
   }
 
   /**
-   * Captures a JPEG snapshot from a channel.
+   * Captures a JPEG snapshot from a channel and saves to file.
    *
    * @param userId - User ID from successful login
    * @param channel - Video channel number
@@ -409,6 +487,308 @@ export class SDK implements TVTSDK {
       channel,
       fileName
     )
+  }
+
+  /**
+   * Captures a JPEG snapshot from a channel into an in-memory buffer.
+   *
+   * @param userId - User ID from successful login
+   * @param channel - Video channel number
+   * @param buffer - Pre-allocated buffer to receive JPEG data
+   * @param bufferSize - Size of the buffer in bytes
+   * @param sizeReturned - Array to receive the actual number of bytes written
+   * @returns Success status
+   */
+  public async captureJPEGData_V2(
+    userId: number,
+    channel: number,
+    buffer: Buffer,
+    bufferSize: number,
+    sizeReturned: number[]
+  ): Promise<boolean> {
+    const koffi = await this.koffi
+    const lib = await this.lib
+    return lib.func('NET_SDK_CaptureJPEGData_V2', 'bool', [
+      'long',
+      'long',
+      koffi.out(koffi.pointer('char')),
+      'uint32_t',
+      koffi.out(koffi.pointer('uint32_t'))
+    ])(userId, channel, buffer, bufferSize, sizeReturned)
+  }
+
+  /**
+   * Captures a JPEG snapshot with resolution selection (older API).
+   *
+   * @param userId - User ID from successful login
+   * @param channel - Video channel number
+   * @param resolution - Resolution: 0=CIF, 1=QCIF, 2=D1, 3=UXGA, 4=SVGA, 5=HD720p, 6=VGA, 7=XVGA, 8=HD900p
+   * @param buffer - Pre-allocated buffer to receive JPEG data
+   * @param bufferSize - Size of the buffer in bytes
+   * @param sizeReturned - Array to receive the actual number of bytes written
+   * @returns Success status
+   */
+  public async captureJpeg(
+    userId: number,
+    channel: number,
+    resolution: number,
+    buffer: Buffer,
+    bufferSize: number,
+    sizeReturned: number[]
+  ): Promise<boolean> {
+    const koffi = await this.koffi
+    const lib = await this.lib
+    return lib.func('NET_SDK_CaptureJpeg', 'bool', [
+      'long',
+      'long',
+      'long',
+      koffi.out(koffi.pointer('char')),
+      'uint32_t',
+      koffi.out(koffi.pointer('uint32_t'))
+    ])(userId, channel, resolution, buffer, bufferSize, sizeReturned)
+  }
+
+  /**
+   * Captures a JPEG snapshot with JPEG parameter control (quality/size).
+   * Note: The lpJpegPara struct fields may be ignored by the SDK per docs.
+   *
+   * @param userId - User ID from successful login
+   * @param channel - Video channel number
+   * @param jpegPara - NET_SDK_JPEGPARA buffer (4 bytes: uint16 wPicSize, uint16 wPicQuality)
+   * @param buffer - Pre-allocated buffer to receive JPEG data
+   * @param bufferSize - Size of the buffer in bytes
+   * @param sizeReturned - Array to receive the actual number of bytes written
+   * @returns Success status
+   */
+  public async captureJPEGPicture(
+    userId: number,
+    channel: number,
+    jpegPara: Buffer,
+    buffer: Buffer,
+    bufferSize: number,
+    sizeReturned: number[]
+  ): Promise<boolean> {
+    const koffi = await this.koffi
+    const lib = await this.lib
+    return lib.func('NET_SDK_CaptureJPEGPicture', 'bool', [
+      'long',
+      'long',
+      koffi.pointer('char'),
+      koffi.out(koffi.pointer('char')),
+      'uint32_t',
+      koffi.out(koffi.pointer('uint32_t'))
+    ])(userId, channel, jpegPara, buffer, bufferSize, sizeReturned)
+  }
+
+  /**
+   * Captures a picture from a channel without live preview (variant).
+   *
+   * @param userId - User ID from successful login
+   * @param channel - Video channel number
+   * @param fileName - Path to save the picture file
+   * @returns Success status
+   */
+  public async capturePictureOther(userId: number, channel: number, fileName: string): Promise<boolean> {
+    return (await this.lib).func('NET_SDK_CapturePicture_Other', 'bool', ['long', 'long', 'string'])(
+      userId,
+      channel,
+      fileName
+    )
+  }
+
+  /**
+   * Starts a live preview session (headless, no decode, no callback).
+   * Used to obtain a live handle for CapturePicture.
+   *
+   * @param userId - User ID from successful login
+   * @param clientInfo - NET_SDK_CLIENTINFO buffer (channel, streamType, hPlayWnd=0, bNoDecode=1)
+   * @returns Live handle (POINTERHANDLE, int64). -1 on failure.
+   */
+  public async livePlay(userId: number, clientInfo: Buffer): Promise<bigint> {
+    const koffi = await this.koffi
+    const lib = await this.lib
+    return lib.func('NET_SDK_LivePlay', 'int64', [
+      'long',
+      koffi.pointer('char'),
+      'void *',
+      'void *'
+    ])(userId, clientInfo, null, null)
+  }
+
+  /**
+   * Stops a live preview session.
+   *
+   * @param liveHandle - Handle from livePlay
+   * @returns Success status
+   */
+  public async stopLivePlay(liveHandle: bigint): Promise<boolean> {
+    return (await this.lib).func('NET_SDK_StopLivePlay', 'bool', ['int64'])(liveHandle)
+  }
+
+  /**
+   * Captures a picture from an active live preview session.
+   * This is stream-type-aware (the stream type was set when starting LivePlay).
+   *
+   * @param liveHandle - Handle from livePlay
+   * @param fileName - Path to save the picture file
+   * @returns Success status
+   */
+  public async capturePicture(liveHandle: bigint, fileName: string): Promise<boolean> {
+    return (await this.lib).func('NET_SDK_CapturePicture', 'bool', ['int64', 'string'])(liveHandle, fileName)
+  }
+
+  /**
+   * Gets the RTSP URL for a device channel and stream type.
+   *
+   * @param userId - User ID from successful login
+   * @param channel - Video channel number
+   * @param streamType - Stream type (0=main, 1=sub, 2=third, 3=fourth)
+   * @param urlBuffer - Pre-allocated buffer to receive the RTSP URL string
+   * @returns Success status
+   */
+  public async getRtspUrl(
+    userId: number,
+    channel: number,
+    streamType: number,
+    urlBuffer: Buffer
+  ): Promise<boolean> {
+    const koffi = await this.koffi
+    const lib = await this.lib
+    return lib.func('NET_SDK_GetRtspUrl', 'bool', [
+      'long',
+      'long',
+      'long',
+      koffi.out(koffi.pointer('char'))
+    ])(userId, channel, streamType, urlBuffer)
+  }
+
+  /**
+   * Transparent API interface — sends XML to the device and receives XML response.
+   * This is the primary mechanism for configuring features not covered by GetDVRConfig/SetDVRConfig.
+   *
+   * @param userId - User ID from successful login
+   * @param sendXML - XML string to send (empty string for GET requests)
+   * @param strUrl - API URL path (e.g. '/network/rtsp')
+   * @param outBuffer - Pre-allocated buffer to receive response
+   * @param outBufferSize - Size of the output buffer
+   * @param bytesReturned - Array to receive the actual bytes written
+   * @returns Success status
+   */
+  public async apiInterface(
+    userId: number,
+    sendXML: string,
+    strUrl: string,
+    outBuffer: Buffer,
+    outBufferSize: number,
+    bytesReturned: number[]
+  ): Promise<boolean> {
+    const koffi = await this.koffi
+    const lib = await this.lib
+    return lib.func('NET_SDK_ApiInterface', 'bool', [
+      'long',
+      'string',
+      'string',
+      koffi.out(koffi.pointer('char')),
+      'uint32_t',
+      koffi.out(koffi.pointer('uint32_t'))
+    ])(userId, sendXML, strUrl, outBuffer, outBufferSize, bytesReturned)
+  }
+
+  /**
+   * Transparent config interface — sends XML to the device for configuration.
+   *
+   * @param userId - User ID from successful login
+   * @param sendXML - XML string to send
+   * @param strUrl - Config URL path
+   * @param outBuffer - Pre-allocated buffer to receive response
+   * @param outBufferSize - Size of the output buffer
+   * @param bytesReturned - Array to receive the actual bytes written
+   * @returns Success status
+   */
+  public async transparentConfig(
+    userId: number,
+    sendXML: string,
+    strUrl: string,
+    outBuffer: Buffer,
+    outBufferSize: number,
+    bytesReturned: number[]
+  ): Promise<boolean> {
+    const koffi = await this.koffi
+    const lib = await this.lib
+    return lib.func('NET_SDK_TransparentConfig', 'bool', [
+      'long',
+      'string',
+      'string',
+      koffi.out(koffi.pointer('char')),
+      'uint32_t',
+      koffi.out(koffi.pointer('uint32_t'))
+    ])(userId, sendXML, strUrl, outBuffer, outBufferSize, bytesReturned)
+  }
+
+  /**
+   * Gets device configuration by command ID.
+   */
+  public async getDVRConfig(
+    userId: number,
+    command: number,
+    channel: number,
+    outBuffer: Buffer,
+    outBufferSize: number,
+    bytesReturned: number[],
+    defaultConfig: boolean
+  ): Promise<boolean> {
+    const koffi = await this.koffi
+    const lib = await this.lib
+    return lib.func('NET_SDK_GetDVRConfig', 'bool', [
+      'long',
+      'uint32_t',
+      'long',
+      koffi.out(koffi.pointer('char')),
+      'uint32_t',
+      koffi.out(koffi.pointer('uint32_t')),
+      'bool'
+    ])(userId, command, channel, outBuffer, outBufferSize, bytesReturned, defaultConfig)
+  }
+
+  /**
+   * Sets device configuration by command ID.
+   */
+  public async setDVRConfig(
+    userId: number,
+    command: number,
+    channel: number,
+    inBuffer: Buffer,
+    inBufferSize: number
+  ): Promise<boolean> {
+    const lib = await this.lib
+    return lib.func('NET_SDK_SetDVRConfig', 'bool', [
+      'long',
+      'uint32_t',
+      'long',
+      'void *',
+      'uint32_t'
+    ])(userId, command, channel, inBuffer, inBufferSize)
+  }
+
+  /**
+   * Enters DVR config mode. Must be called before SetDVRConfig.
+   */
+  public async enterDVRConfig(userId: number): Promise<number> {
+    return (await this.lib).func('NET_SDK_EnterDVRConfig', 'long', ['long'])(userId)
+  }
+
+  /**
+   * Exits DVR config mode.
+   */
+  public async exitDVRConfig(userId: number): Promise<boolean> {
+    return (await this.lib).func('NET_SDK_ExitDVRConfig', 'bool', ['long'])(userId)
+  }
+
+  /**
+   * Saves configuration to device.
+   */
+  public async saveConfig(userId: number): Promise<boolean> {
+    return (await this.lib).func('NET_SDK_SaveConfig', 'bool', ['long'])(userId)
   }
 }
 
